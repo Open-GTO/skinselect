@@ -13,13 +13,13 @@
 		SS_Response_Select
 
 	Sart skin selection:
-		SkinSelect_Start(playerid);
+		SkinSelect_Start(playerid, SkinSelect:test);
 
 	Stop skin selection:
-		SkinSelect_Stop(playerid);
+		SkinSelect_Stop(playerid, SkinSelect:test);
 
 	Get response:
-		public OnSkinSelectResponse(playerid, SS_Response:type, oldskin, newskin)
+		SkinSelectResponse:test(playerid, SS_Response:type, oldskin, newskin)
 		{
 	
 		}
@@ -46,6 +46,7 @@
 */
 
 #define MSELECTION_MENU_ID 37000
+#define SKINSELECT_MAX_FUNCTION_NAME 31
 
 #if !defined SKINS_IGNORE
 	#define SKINS_IGNORE 0, 74
@@ -58,6 +59,16 @@
 #if !defined SKINS_MAXID
 	#define SKINS_MAXID 311
 #endif
+
+/*
+	Define functions
+*/
+
+#define SkinSelectResponse:%0(%1) \
+	forward ssr_%0(%1); \
+	public ssr_%0(%1)
+
+#define SkinSelect: #
 
 /*
 
@@ -87,6 +98,7 @@ enum SS_Response {
 static
 	bool:IsSelectOpen[MAX_PLAYERS],
 	bool:IsListOpen[MAX_PLAYERS],
+	FunctionName[MAX_PLAYERS][SKINSELECT_MAX_FUNCTION_NAME - 4],
 	CurrentSkin[MAX_PLAYERS],
 	OldSkin[MAX_PLAYERS],
 	SkinsArray[SKINS_MAXID + 1],
@@ -219,7 +231,7 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 			SS_ChangeSkin(playerid, CurrentSkin[playerid], CurrentSkin[playerid] + 1);
 			return 0;
 		} else if (clickedid == TD_Select) {
-			CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Select, OldSkin[playerid], CurrentSkin[playerid]);
+			SS_CallFunction(playerid, SS_Response_Select, OldSkin[playerid], CurrentSkin[playerid]);
 			return 0;
 		} else if (clickedid == TD_List) {
 			IsListOpen[playerid] = true;
@@ -298,27 +310,34 @@ stock IsSkinValid(skinid)
 	return 1;
 }
 
-stock SkinSelect_Start(playerid)
+stock SkinSelect_Start(playerid, function[])
 {
 	IsSelectOpen[playerid] = true;
 
 	OldSkin[playerid] = GetPlayerSkin(playerid);
 	CurrentSkin[playerid] = SKINS_MINID;
+	strmid(FunctionName[playerid], function, 0, strlen(function), sizeof(FunctionName[]));
 
 	SetPlayerSkin(playerid, CurrentSkin[playerid]);
 
 	SS_ShowTextDraws(playerid);
 
-	CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Start, OldSkin[playerid], CurrentSkin[playerid]);
+	SS_CallFunction(playerid, SS_Response_Start, OldSkin[playerid], CurrentSkin[playerid]);
 }
 
 stock SkinSelect_Stop(playerid)
 {
 	IsSelectOpen[playerid] = false;
 
+	SetPlayerSkin(playerid, OldSkin[playerid]);
+
 	SS_HideTextDraws(playerid);
 
-	CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Stop, OldSkin[playerid], CurrentSkin[playerid]);
+	SS_CallFunction(playerid, SS_Response_Stop, OldSkin[playerid], CurrentSkin[playerid]);
+
+	OldSkin[playerid] = 0;
+	CurrentSkin[playerid] = 0;
+	FunctionName[playerid][0] = '\0';
 }
 
 stock SkinSelect_GetCurrentSkin(playerid)
@@ -334,6 +353,17 @@ stock SkinSelect_GetOldSkin(playerid)
 /*
 	Private functions
 */
+
+static stock SS_CallFunction(playerid, SS_Response:type, oldskin, newskin)
+{
+	new call_func[SKINSELECT_MAX_FUNCTION_NAME];
+	strcat(call_func, "ssr_");
+	strcat(call_func, FunctionName[playerid]);
+
+	if (funcidx(call_func) != -1) {
+		CallLocalFunction(call_func, "iiii", playerid, _:type, oldskin, newskin);
+	}
+}
 
 static stock SS_HideTextDraws(playerid, bool:cancel_select = true)
 {
@@ -378,5 +408,5 @@ static stock SS_ChangeSkin(playerid, oldskin, newskin)
 	SetPlayerSkin(playerid, newskin);
 	CurrentSkin[playerid] = newskin;
 
-	CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Change, oldskin, newskin);
+	SS_CallFunction(playerid, SS_Response_Change, oldskin, newskin);
 }
