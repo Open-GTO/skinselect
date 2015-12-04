@@ -321,6 +321,16 @@ stock SkinSelect_Stop(playerid)
 	CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Stop, OldSkin[playerid], CurrentSkin[playerid]);
 }
 
+stock SkinSelect_GetCurrentSkin(playerid)
+{
+	return CurrentSkin[playerid];
+}
+
+stock SkinSelect_GetOldSkin(playerid)
+{
+	return OldSkin[playerid];
+}
+
 /*
 	Private functions
 */
