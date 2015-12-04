@@ -13,7 +13,7 @@
 		SS_Response_Select
 
 	Sart skin selection:
-		SkinSelect_Start(playerid, "Buy");
+		SkinSelect_Start(playerid);
 
 	Stop skin selection:
 		SkinSelect_Stop(playerid);
@@ -298,7 +298,7 @@ stock IsSkinValid(skinid)
 	return 1;
 }
 
-stock SkinSelect_Start(playerid, select_text[] = "Select")
+stock SkinSelect_Start(playerid)
 {
 	IsSelectOpen[playerid] = true;
 
@@ -307,7 +307,7 @@ stock SkinSelect_Start(playerid, select_text[] = "Select")
 
 	SetPlayerSkin(playerid, CurrentSkin[playerid]);
 
-	SS_ShowTextDraws(playerid, select_text);
+	SS_ShowTextDraws(playerid);
 
 	CallRemoteFunction("OnSkinSelectResponse", "iiii", playerid, _:SS_Response_Start, OldSkin[playerid], CurrentSkin[playerid]);
 }
@@ -349,10 +349,8 @@ static stock SS_HideTextDraws(playerid, bool:cancel_select = true)
 	return 1;
 }
 
-static stock SS_ShowTextDraws(playerid, select_text[] = "Select", bool:set_select = true)
+static stock SS_ShowTextDraws(playerid, bool:set_select = true)
 {
-	TextDrawSetString(TD_Select, select_text);
-
 	TextDrawShowForPlayer(playerid, TD_ArrowLeft);
 	TextDrawShowForPlayer(playerid, TD_ArrowRight);
 	TextDrawShowForPlayer(playerid, TD_Select);
