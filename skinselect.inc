@@ -12,7 +12,7 @@
 		SS_Response_Change
 		SS_Response_Select
 
-	Sart skin selection:
+	Start skin selection:
 		SkinSelect_Start(playerid, SkinSelect:test);
 
 	Stop skin selection:
@@ -46,7 +46,7 @@
 */
 
 #define MSELECTION_MENU_ID 37000
-#define SKINSELECT_MAX_FUNCTION_NAME 31
+#define SKINSELECT_MAX_FUNCTION_NAME 32
 
 #if !defined SKINS_IGNORE
 	#define SKINS_IGNORE 0, 74
