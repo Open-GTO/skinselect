@@ -21,7 +21,7 @@
 	Get response:
 		SkinSelectResponse:test(playerid, SS_Response:type, oldskin, newskin)
 		{
-	
+
 		}
 
 */
@@ -39,7 +39,6 @@
 #endif
 
 #define _skin_select_included
-#pragma library skin_select
 
 /*
 	Defines
@@ -211,7 +210,7 @@ public OnGameModeInit()
 #else
 	#define _ALS_OnGameModeInit
 #endif
- 
+
 #define OnGameModeInit SS_OnGameModeInit
 #if defined SS_OnGameModeInit
 	forward SS_OnGameModeInit();
@@ -255,7 +254,7 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 #else
 	#define _ALS_OnPlayerClickTextDraw
 #endif
- 
+
 #define OnPlayerClickTextDraw SS_OnPlayerClickTextDraw
 #if defined SS_OnPlayerClickTextDraw
 	forward SS_OnPlayerClickTextDraw(playerid, Text:clickedid);
@@ -289,7 +288,7 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 #else
 	#define _ALS_OnPlayerModelSelectionEx
 #endif
- 
+
 #define OnPlayerModelSelectionEx SS_OnPlayerModelSelectionEx
 #if defined SS_OnPlayerModelSelectionEx
 	forward SS_OnPlayerModelSelectionEx(playerid, response, extraid, modelid);
@@ -386,7 +385,7 @@ static stock SS_ShowTextDraws(playerid, bool:set_select = true)
 	TextDrawShowForPlayer(playerid, TD_Select);
 	TextDrawShowForPlayer(playerid, TD_List);
 	TextDrawShowForPlayer(playerid, TD_Exit);
-	
+
 	if (set_select) {
 		SelectTextDraw(playerid, 0xFFFFFFFF);
 	}
