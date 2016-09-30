@@ -300,6 +300,10 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 
 stock IsSkinValid(skinid)
 {
+	if (!(SKINS_MINID < skinid < SKINS_MAXID)) {
+		return 0;
+	}
+
 	switch (skinid) {
 		case SKINS_IGNORE: {
 			return 0;
@@ -315,7 +319,8 @@ stock SkinSelect_Start(playerid, function[])
 
 	OldSkin[playerid] = GetPlayerSkin(playerid);
 	CurrentSkin[playerid] = SKINS_MINID;
-	strmid(FunctionName[playerid], function, 0, strlen(function), sizeof(FunctionName[]));
+	FunctionName[playerid][0] = '\0';
+	strcat(FunctionName[playerid], function, sizeof(FunctionName[]));
 
 	SetPlayerSkin(playerid, CurrentSkin[playerid]);
 
@@ -355,8 +360,7 @@ stock SkinSelect_GetOldSkin(playerid)
 
 static stock SS_CallFunction(playerid, SS_Response:type, oldskin, newskin)
 {
-	new call_func[SKINSELECT_MAX_FUNCTION_NAME];
-	strcat(call_func, "ssr_");
+	new call_func[SKINSELECT_MAX_FUNCTION_NAME] = "ssr_";
 	strcat(call_func, FunctionName[playerid]);
 
 	if (funcidx(call_func) != -1) {
