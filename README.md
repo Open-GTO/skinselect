@@ -2,19 +2,13 @@
 Skin select system. Requires [mselect](https://github.com/Open-GTO/mselect) library.
 
 # Defines
-```Pawn
-#if !defined SKINS_IGNORE
-	#define SKINS_IGNORE 0, 74
-#endif
-
-#if !defined SKINS_MINID
-	#define SKINS_MINID 1
-#endif
-
-#if !defined SKINS_MAXID
-	#define SKINS_MAXID 311
-#endif
-```
+Define | Default value | Can be redefined?
+---|---|---
+SKINS_IGNORE | 74 | yes
+SKINS_MINID | 0 | yes
+SKINS_MAXID | 311 | yes
+SKINS_COUNT | 310 | yes
+SKINSELECT_MAX_FUNCTION_NAME | 31 | no
 
 # Callbacks
 ```Pawn
@@ -22,12 +16,10 @@ forward OnSkinSelectResponse(playerid, SS_Response:type, oldskin, newskin);
 ```
 
 # SS_Response types
-```Pawn
-SS_Response_Start
-SS_Response_Stop
-SS_Response_Change
-SS_Response_Select
-```
+- SS_Response_Start
+- SS_Response_Stop
+- SS_Response_Change
+- SS_Response_Select
 
 # Functions
 ```Pawn
