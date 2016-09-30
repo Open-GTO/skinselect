@@ -30,8 +30,8 @@
 	#error "Please include a_samp or a_npc before skinselect"
 #endif
 
-#if !defined ShowModelSelectionMenuEx
-	#error "Please include mSelection before skinselect"
+#if !defined _mselect_included
+	#error "Please include mselect before skinselect"
 #endif
 
 #if defined _skin_select_included
@@ -44,19 +44,22 @@
 	Defines
 */
 
-#define MSELECTION_MENU_ID 37000
-#define SKINSELECT_MAX_FUNCTION_NAME 32
+#define SKINSELECT_MAX_FUNCTION_NAME 31
 
 #if !defined SKINS_IGNORE
-	#define SKINS_IGNORE 0, 74
+	#define SKINS_IGNORE 74
 #endif
 
 #if !defined SKINS_MINID
-	#define SKINS_MINID 1
+	#define SKINS_MINID 0
 #endif
 
 #if !defined SKINS_MAXID
 	#define SKINS_MAXID 311
+#endif
+
+#if !defined SKINS_COUNT
+	#define SKINS_COUNT 310
 #endif
 
 /*
@@ -97,10 +100,11 @@ enum SS_Response {
 static
 	bool:IsSelectOpen[MAX_PLAYERS],
 	bool:IsListOpen[MAX_PLAYERS],
+	bool:TD_SkipCancel[MAX_PLAYERS],
 	FunctionName[MAX_PLAYERS][SKINSELECT_MAX_FUNCTION_NAME - 4],
-	CurrentSkin[MAX_PLAYERS],
+	CurrentIndex[MAX_PLAYERS],
 	OldSkin[MAX_PLAYERS],
-	SkinsArray[SKINS_MAXID + 1],
+	SkinsArray[SKINS_COUNT],
 	SkinsCount,
 
 	Text:TD_ArrowLeft,
@@ -116,12 +120,16 @@ static
 public OnGameModeInit()
 {
 	// mSelection array
-	for (new skinid = 0; skinid <= SKINS_MAXID; skinid++) {
+	for (new skinid = SKINS_MINID; skinid <= SKINS_MAXID; skinid++) {
 		switch (skinid) {
 			case SKINS_IGNORE: {
 
 			}
 			default: {
+				if (SkinsCount >= sizeof(SkinsArray)) {
+					printf("Error (SkinSelect): SkinsArray lower than needed.");
+					break;
+				}
 				SkinsArray[SkinsCount] = skinid;
 				SkinsCount++;
 			}
@@ -222,31 +230,41 @@ public OnGameModeInit()
 
 public OnPlayerClickTextDraw(playerid, Text:clickedid)
 {
+	if (clickedid == Text:INVALID_TEXT_DRAW && TD_SkipCancel[playerid]) {
+		TD_SkipCancel[playerid] = false;
+		return 1;
+	}
+
 	if (IsSelectOpen[playerid]) {
+		if (IsListOpen[playerid]) {
+			return 0;
+		}
+
 		if (clickedid == TD_ArrowLeft) {
-			SS_ChangeSkin(playerid, CurrentSkin[playerid], CurrentSkin[playerid] - 1);
-			return 0;
+			SS_ChangeSkin(playerid, CurrentIndex[playerid] - 1, CurrentIndex[playerid]);
+			return 1;
 		} else if (clickedid == TD_ArrowRight) {
-			SS_ChangeSkin(playerid, CurrentSkin[playerid], CurrentSkin[playerid] + 1);
-			return 0;
+			SS_ChangeSkin(playerid, CurrentIndex[playerid] + 1, CurrentIndex[playerid]);
+			return 1;
 		} else if (clickedid == TD_Select) {
-			SS_CallFunction(playerid, SS_Response_Select, OldSkin[playerid], CurrentSkin[playerid]);
-			return 0;
+			SS_CallFunction(playerid, SS_Response_Select, OldSkin[playerid], SkinsArray[ CurrentIndex[playerid] ]);
+			return 1;
 		} else if (clickedid == TD_List) {
 			IsListOpen[playerid] = true;
 			SS_HideTextDraws(playerid, false);
-			ShowModelSelectionMenuEx(playerid, SkinsArray, SkinsCount, "Select skin", MSELECTION_MENU_ID, 16.0, 0.0, -55.0);
-			return 0;
-		} else if ((clickedid == TD_Exit || clickedid == Text:INVALID_TEXT_DRAW) && !IsListOpen[playerid]) {
+			MSelect_Open(playerid, MSelect:SkinSelect, SkinsArray, SkinsCount, .list_loop = true,
+			             .header = "Select skin", .header_fg_color = 0xFFA500FF);
+			return 1;
+		} else if (clickedid == TD_Exit || clickedid == Text:INVALID_TEXT_DRAW) {
 			SkinSelect_Stop(playerid);
-			return 0;
+			return 1;
 		}
 	}
 
 	#if defined SS_OnPlayerClickTextDraw
 		return SS_OnPlayerClickTextDraw(playerid, clickedid);
 	#else
-		return 1;
+		return 0;
 	#endif
 }
 #if defined _ALS_OnPlayerClickTextDraw
@@ -261,38 +279,21 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 #endif
 
 /*
-	OnPlayerModelSelectionEx
+	MSelectResponse:SkinSelect
 */
 
-public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
+MSelectResponse:SkinSelect(playerid, MSelectType:response, itemid, modelid)
 {
-	if (extraid == MSELECTION_MENU_ID) {
+	if (response == MSelect_Item || response == MSelect_Button || response == MSelect_Cancel) {
+		MSelect_Close(playerid);
 		IsListOpen[playerid] = false;
 		SS_ShowTextDraws(playerid);
-
-		if (response) {
-			SS_ChangeSkin(playerid, CurrentSkin[playerid], modelid);
-		}
-
-		return 0;
 	}
-
-	#if defined SS_OnPlayerModelSelectionEx
-		return SS_OnPlayerModelSelectionEx(playerid, response, extraid, modelid);
-	#else
-		return 1;
-	#endif
+	if (response == MSelect_Item) {
+		SS_ChangeSkin(playerid, itemid, CurrentIndex[playerid]);
+	}
+	return 1;
 }
-#if defined _ALS_OnPlayerModelSelectionEx
-	#undef OnPlayerModelSelectionEx
-#else
-	#define _ALS_OnPlayerModelSelectionEx
-#endif
-
-#define OnPlayerModelSelectionEx SS_OnPlayerModelSelectionEx
-#if defined SS_OnPlayerModelSelectionEx
-	forward SS_OnPlayerModelSelectionEx(playerid, response, extraid, modelid);
-#endif
 
 /*
 	Public functions
@@ -300,17 +301,15 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 
 stock IsSkinValid(skinid)
 {
-	if (!(SKINS_MINID < skinid < SKINS_MAXID)) {
-		return 0;
-	}
-
-	switch (skinid) {
-		case SKINS_IGNORE: {
-			return 0;
+	if (SKINS_MINID <= skinid <= SKINS_MAXID) {
+		switch (skinid) {
+			case SKINS_IGNORE: {
+				return 0;
+			}
 		}
+		return 1;
 	}
-
-	return 1;
+	return 0;
 }
 
 stock SkinSelect_Start(playerid, function[])
@@ -318,15 +317,14 @@ stock SkinSelect_Start(playerid, function[])
 	IsSelectOpen[playerid] = true;
 
 	OldSkin[playerid] = GetPlayerSkin(playerid);
-	CurrentSkin[playerid] = SKINS_MINID;
+	CurrentIndex[playerid] = 0;
 	FunctionName[playerid][0] = '\0';
 	strcat(FunctionName[playerid], function, sizeof(FunctionName[]));
 
-	SetPlayerSkin(playerid, CurrentSkin[playerid]);
-
+	new newskin = SkinsArray[0];
+	SetPlayerSkin(playerid, newskin);
 	SS_ShowTextDraws(playerid);
-
-	SS_CallFunction(playerid, SS_Response_Start, OldSkin[playerid], CurrentSkin[playerid]);
+	SS_CallFunction(playerid, SS_Response_Start, OldSkin[playerid], newskin);
 }
 
 stock SkinSelect_Stop(playerid)
@@ -334,19 +332,17 @@ stock SkinSelect_Stop(playerid)
 	IsSelectOpen[playerid] = false;
 
 	SetPlayerSkin(playerid, OldSkin[playerid]);
-
 	SS_HideTextDraws(playerid);
-
-	SS_CallFunction(playerid, SS_Response_Stop, OldSkin[playerid], CurrentSkin[playerid]);
+	SS_CallFunction(playerid, SS_Response_Stop, OldSkin[playerid], SkinsArray[ CurrentIndex[playerid] ]);
 
 	OldSkin[playerid] = 0;
-	CurrentSkin[playerid] = 0;
+	CurrentIndex[playerid] = 0;
 	FunctionName[playerid][0] = '\0';
 }
 
 stock SkinSelect_GetCurrentSkin(playerid)
 {
-	return CurrentSkin[playerid];
+	return SkinsArray[ CurrentIndex[playerid] ];
 }
 
 stock SkinSelect_GetOldSkin(playerid)
@@ -377,6 +373,7 @@ static stock SS_HideTextDraws(playerid, bool:cancel_select = true)
 	TextDrawHideForPlayer(playerid, TD_Exit);
 
 	if (cancel_select) {
+		TD_SkipCancel[playerid] = true;
 		CancelSelectTextDraw(playerid);
 	}
 	return 1;
@@ -396,20 +393,20 @@ static stock SS_ShowTextDraws(playerid, bool:set_select = true)
 	return 1;
 }
 
-static stock SS_ChangeSkin(playerid, oldskin, newskin)
+static stock SS_ChangeSkin(playerid, index, prev_index)
 {
-	if (newskin > SKINS_MAXID) {
-		newskin = SKINS_MINID;
-	} else if (newskin < SKINS_MINID) {
-		newskin = SKINS_MAXID;
+	if (index < 0) {
+		index = sizeof(SkinsArray) - 1;
+	} else if (index >= sizeof(SkinsArray)) {
+		index = 0;
 	}
 
-	if (!IsSkinValid(newskin)) {
-		newskin += (newskin > oldskin) ? 1 : -1;
-	}
+	new
+		oldskin = SkinsArray[prev_index],
+		newskin = SkinsArray[index];
 
+	CurrentIndex[playerid] = index;
 	SetPlayerSkin(playerid, newskin);
-	CurrentSkin[playerid] = newskin;
 
 	SS_CallFunction(playerid, SS_Response_Change, oldskin, newskin);
 }
