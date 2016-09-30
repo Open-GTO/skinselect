@@ -1,5 +1,5 @@
 # skinselect
-Skin select system
+Skin select system. Requires [mselect](https://github.com/Open-GTO/mselect) library.
 
 # Defines
 ```Pawn
