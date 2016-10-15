@@ -30,10 +30,6 @@
 	#error "Please include a_samp or a_npc before skinselect"
 #endif
 
-#if !defined _mselect_included
-	#error "Please include mselect before skinselect"
-#endif
-
 #if defined _skin_select_included
 	#endinput
 #endif
@@ -110,7 +106,9 @@ static
 	Text:TD_ArrowLeft,
 	Text:TD_ArrowRight,
 	Text:TD_Select,
+#if defined _mselect_included
 	Text:TD_List,
+#endif
 	Text:TD_Exit;
 
 /*
@@ -119,7 +117,7 @@ static
 
 public OnGameModeInit()
 {
-	// mSelection array
+	// skins array
 	for (new skinid = SKINS_MINID; skinid <= SKINS_MAXID; skinid++) {
 		switch (skinid) {
 			case SKINS_IGNORE: {
@@ -179,6 +177,7 @@ public OnGameModeInit()
 	TextDrawTextSize(TD_Select, 14.000000, 105.000000);
 	TextDrawSetSelectable(TD_Select, 1);
 
+#if defined _mselect_included
 	TD_List = TextDrawCreate(288.000000, 409.000000, "List");
 	TextDrawAlignment(TD_List, 2);
 	TextDrawBackgroundColor(TD_List, 255);
@@ -192,6 +191,7 @@ public OnGameModeInit()
 	TextDrawBoxColor(TD_List, 0x00000099);
 	TextDrawTextSize(TD_List, 15.000000, 50.000000);
 	TextDrawSetSelectable(TD_List, 1);
+#endif
 
 	TD_Exit = TextDrawCreate(343.000000, 409.000000, "Exit");
 	TextDrawAlignment(TD_Exit, 2);
@@ -249,12 +249,16 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 		} else if (clickedid == TD_Select) {
 			SS_CallFunction(playerid, SS_Response_Select, OldSkin[playerid], SkinsArray[ CurrentIndex[playerid] ]);
 			return 1;
+
+	#if defined _mselect_included
 		} else if (clickedid == TD_List) {
 			IsListOpen[playerid] = true;
 			SS_HideTextDraws(playerid, false);
 			MSelect_Open(playerid, MSelect:SkinSelect, SkinsArray, SkinsCount, .list_loop = true,
 			             .header = "Select skin", .header_fg_color = 0xFFA500FF);
 			return 1;
+	#endif
+
 		} else if (clickedid == TD_Exit || clickedid == Text:INVALID_TEXT_DRAW) {
 			SkinSelect_Stop(playerid);
 			return 1;
@@ -281,6 +285,7 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 /*
 	MSelectResponse:SkinSelect
 */
+#if defined _mselect_included
 
 MSelectResponse:SkinSelect(playerid, MSelectType:response, itemid, modelid)
 {
@@ -294,6 +299,8 @@ MSelectResponse:SkinSelect(playerid, MSelectType:response, itemid, modelid)
 	}
 	return 1;
 }
+
+#endif
 
 /*
 	Public functions
@@ -369,7 +376,9 @@ static stock SS_HideTextDraws(playerid, bool:cancel_select = true)
 	TextDrawHideForPlayer(playerid, TD_ArrowLeft);
 	TextDrawHideForPlayer(playerid, TD_ArrowRight);
 	TextDrawHideForPlayer(playerid, TD_Select);
+#if defined _mselect_included
 	TextDrawHideForPlayer(playerid, TD_List);
+#endif
 	TextDrawHideForPlayer(playerid, TD_Exit);
 
 	if (cancel_select) {
@@ -384,7 +393,9 @@ static stock SS_ShowTextDraws(playerid, bool:set_select = true)
 	TextDrawShowForPlayer(playerid, TD_ArrowLeft);
 	TextDrawShowForPlayer(playerid, TD_ArrowRight);
 	TextDrawShowForPlayer(playerid, TD_Select);
+#if defined _mselect_included
 	TextDrawShowForPlayer(playerid, TD_List);
+#endif
 	TextDrawShowForPlayer(playerid, TD_Exit);
 
 	if (set_select) {
