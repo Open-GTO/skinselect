@@ -290,12 +290,14 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 MSelectResponse:SkinSelect(playerid, MSelectType:response, itemid, modelid)
 {
 	if (response == MSelect_Item || response == MSelect_Button || response == MSelect_Cancel) {
-		MSelect_Close(playerid);
 		IsListOpen[playerid] = false;
+
+		if (response == MSelect_Item) {
+			MSelect_Close(playerid);
+			SS_ChangeSkin(playerid, itemid, CurrentIndex[playerid]);
+		}
+
 		SS_ShowTextDraws(playerid);
-	}
-	if (response == MSelect_Item) {
-		SS_ChangeSkin(playerid, itemid, CurrentIndex[playerid]);
 	}
 	return 1;
 }
