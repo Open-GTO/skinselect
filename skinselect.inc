@@ -321,7 +321,7 @@ stock IsSkinValid(skinid)
 	return 0;
 }
 
-stock SkinSelect_Start(playerid, function[])
+stock SkinSelect_Start(playerid, const function[])
 {
 	IsSelectOpen[playerid] = true;
 
